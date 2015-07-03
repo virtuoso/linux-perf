@@ -99,6 +99,16 @@
 #define cpu_relax() barrier()
 #endif
 
+#include <stdio.h>
+#include <sys/prctl.h>
+#include <errno.h>
+
+char perf_err[BUFSIZ];
+
+#ifndef PR_GET_ERR_DESC
+#define PR_GET_ERR_DESC 47
+#endif
+
 static inline int
 sys_perf_event_open(struct perf_event_attr *attr,
 		      pid_t pid, int cpu, int group_fd,
@@ -106,8 +116,15 @@ sys_perf_event_open(struct perf_event_attr *attr,
 {
 	int fd;
 
+	perf_err[0] = 0;
+
 	fd = syscall(__NR_perf_event_open, attr, pid, cpu,
 		     group_fd, flags);
+
+	if (fd < 0) {
+		int q = prctl(PR_GET_ERR_DESC, &perf_err, sizeof(perf_err), 0, 0);
+		fprintf(stderr, "kernel says (%d/%d): %s\n", q, errno, perf_err);
+	}
 
 #ifdef HAVE_ATTR_TEST
 	if (unlikely(test_attr__enabled))
