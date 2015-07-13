@@ -100,6 +100,7 @@ static struct attribute_group pt_cap_group = {
 	.name	= "caps",
 };
 
+PMU_FORMAT_ATTR(no_force_psb,	"config:0"	);
 PMU_FORMAT_ATTR(cyc,		"config:1"	);
 PMU_FORMAT_ATTR(mtc,		"config:9"	);
 PMU_FORMAT_ATTR(tsc,		"config:10"	);
@@ -109,6 +110,7 @@ PMU_FORMAT_ATTR(cyc_thresh,	"config:19-22"	);
 PMU_FORMAT_ATTR(psb_period,	"config:24-27"	);
 
 static struct attribute *pt_formats_attr[] = {
+	&format_attr_no_force_psb.attr,
 	&format_attr_cyc.attr,
 	&format_attr_mtc.attr,
 	&format_attr_tsc.attr,
@@ -199,6 +201,18 @@ static bool pt_event_valid(struct perf_event *event)
 	u64 config = event->attr.config;
 	u64 allowed, requested;
 
+	/*
+	 * Re-use one of the config bits to enable resetting packet byte
+	 * count that will result in outputting PSB+ at every event enable.
+	 * Since we don't allow setting bit 0 (TraceEn) directly from
+	 * attr::config, we can re-use it for our purpose.
+	 */
+	if (config & BIT(0)) {
+		event->hw.flags |= PERF_X86_EVENT_PT_NO_FORCE_PSB;
+		event->attr.config &= ~BIT(0);
+		config = event->attr.config;
+	}
+
 	if ((config & PT_CONFIG_MASK) != config)
 		return false;
 
@@ -244,6 +258,12 @@ static bool pt_event_valid(struct perf_event *event)
 static void pt_config(struct perf_event *event)
 {
 	u64 reg;
+
+	if (!(event->hw.flags & PERF_X86_EVENT_PT_NO_FORCE_PSB) ||
+	    !(event->hw.itrace_started)) {
+		event->hw.itrace_started = 1;
+		wrmsrl(MSR_IA32_RTIT_STATUS, 0);
+	}
 
 	reg = RTIT_CTL_TOPA | RTIT_CTL_BRANCH_EN | RTIT_CTL_TRACEEN;
 
@@ -964,7 +984,6 @@ void intel_pt_interrupt(void)
 
 		pt_config_buffer(buf->cur->table, buf->cur_idx,
 				 buf->output_off);
-		wrmsrl(MSR_IA32_RTIT_STATUS, 0);
 		pt_config(event);
 	}
 }
@@ -988,7 +1007,6 @@ static void pt_event_start(struct perf_event *event, int mode)
 
 	pt_config_buffer(buf->cur->table, buf->cur_idx,
 			 buf->output_off);
-	wrmsrl(MSR_IA32_RTIT_STATUS, 0);
 	pt_config(event);
 }
 

@@ -77,6 +77,7 @@ struct event_constraint {
 #define PERF_X86_EVENT_EXCL_ACCT	0x0200 /* accounted EXCL event */
 #define PERF_X86_EVENT_AUTO_RELOAD	0x0400 /* use PEBS auto-reload */
 #define PERF_X86_EVENT_FREERUNNING	0x0800 /* use freerunning PEBS */
+#define PERF_X86_EVENT_PT_NO_FORCE_PSB	0x1000 /* don't force PSB+ packets */
 
 
 struct amd_nb {
