@@ -949,6 +949,7 @@ int itrace_parse_synth_opts(const struct option *opt, const char *str,
 	struct itrace_synth_opts *synth_opts = opt->value;
 	const char *p;
 	char *endptr;
+	bool period_type_set = false;
 
 	synth_opts->set = true;
 
@@ -977,10 +978,12 @@ int itrace_parse_synth_opts(const struct option *opt, const char *str,
 				case 'i':
 					synth_opts->period_type =
 						PERF_ITRACE_PERIOD_INSTRUCTIONS;
+					period_type_set = true;
 					break;
 				case 't':
 					synth_opts->period_type =
 						PERF_ITRACE_PERIOD_TICKS;
+					period_type_set = true;
 					break;
 				case 'm':
 					synth_opts->period *= 1000;
@@ -993,6 +996,7 @@ int itrace_parse_synth_opts(const struct option *opt, const char *str,
 						goto out_err;
 					synth_opts->period_type =
 						PERF_ITRACE_PERIOD_NANOSECS;
+					period_type_set = true;
 					break;
 				case '\0':
 					goto out;
@@ -1046,7 +1050,7 @@ int itrace_parse_synth_opts(const struct option *opt, const char *str,
 	}
 out:
 	if (synth_opts->instructions) {
-		if (!synth_opts->period_type)
+		if (!period_type_set)
 			synth_opts->period_type =
 					PERF_ITRACE_DEFAULT_PERIOD_TYPE;
 		if (!synth_opts->period)
