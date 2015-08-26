@@ -12,6 +12,8 @@
  *  For licencing details see kernel-base/COPYING
  */
 
+#define EXTERR_MODNAME	"perf/x86"
+
 #include <linux/perf_event.h>
 #include <linux/capability.h>
 #include <linux/notifier.h>
@@ -426,7 +428,8 @@ int x86_setup_perfctr(struct perf_event *event)
 
 		/* BTS is currently only allowed for user-mode. */
 		if (!attr->exclude_kernel)
-			return -EOPNOTSUPP;
+			return perf_err(-EOPNOTSUPP, exclude_kernel,
+					"BTS sampling not allowed for kernel space");
 
 		/* disallow bts if conflicting events are present */
 		if (x86_add_exclusive(x86_lbr_exclusive_lbr))

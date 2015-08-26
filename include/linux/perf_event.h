@@ -16,6 +16,20 @@
 
 #include <uapi/linux/perf_event.h>
 
+#include <linux/exterr.h>
+
+struct perf_ext_err_site {
+	struct ext_err_site	site;
+	const char		*attr_field;
+};
+
+#define perf_err(__c, __a, __m)						\
+	({ /* make sure it's a real field before stringifying it */	\
+		struct perf_event_attr __x; (void)__x.__a;		\
+		ext_err(perf, __c, __m,					\
+			.attr_field = __stringify(__a));		\
+	})
+
 /*
  * Kernel-internal data types and definitions:
  */

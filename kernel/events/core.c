@@ -9,6 +9,8 @@
  * For licensing details see kernel-base/COPYING
  */
 
+#define EXTERR_MODNAME	"perf"
+
 #include <linux/fs.h>
 #include <linux/mm.h>
 #include <linux/cpu.h>
@@ -44,10 +46,23 @@
 #include <linux/compat.h>
 #include <linux/bpf.h>
 #include <linux/filter.h>
+#include <linux/exterr.h>
 
 #include "internal.h"
 
 #include <asm/irq_regs.h>
+
+static char *perf_exterr_format(void *site)
+{
+	struct perf_ext_err_site *psite = site;
+	char *output;
+
+	output = kasprintf(GFP_KERNEL, ",\t\"attr_field\": \"%s\"\n",
+			   psite->attr_field);
+	return output;
+}
+
+DECLARE_EXTERR_DOMAIN(perf, perf_exterr_format);
 
 static struct workqueue_struct *perf_wq;
 
@@ -8352,7 +8367,7 @@ err_group_fd:
 	fdput(group);
 err_fd:
 	put_unused_fd(event_fd);
-	return err;
+	return ext_err_errno(err);
 }
 
 /**
