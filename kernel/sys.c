@@ -54,6 +54,7 @@
 #include <linux/cred.h>
 
 #include <linux/kmsg_dump.h>
+#include <linux/exterr.h>
 /* Move somewhere else to avoid recompiling? */
 #include <generated/utsrelease.h>
 
@@ -2266,6 +2267,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 		break;
 	case PR_GET_FP_MODE:
 		error = GET_FP_MODE(me);
+		break;
+	case PR_GET_ERR_DESC:
+		if (arg4 || arg5)
+			return -EINVAL;
+		error = ext_err_copy_to_user((void __user *)arg2, (size_t)arg3);
 		break;
 	default:
 		error = -EINVAL;

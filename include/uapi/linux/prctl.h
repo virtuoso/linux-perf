@@ -190,4 +190,9 @@ struct prctl_mm_map {
 # define PR_FP_MODE_FR		(1 << 0)	/* 64b FP registers */
 # define PR_FP_MODE_FRE		(1 << 1)	/* 32b compatibility */
 
+/*
+ * Retrieve the extended error report for the last error
+ */
+#define PR_GET_ERR_DESC		47
+
 #endif /* _LINUX_PRCTL_H */
